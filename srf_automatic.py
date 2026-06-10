@@ -14,12 +14,12 @@ BASE_URL         = os.environ.get('JOTFORM_BASE_URL', 'https://pw.jotform.com/AP
 SPREADSHEET_NAME = os.environ.get('GOOGLE_SHEET_NAME', 'Stock Request Form 2.0')
 WORKSHEET_NAME   = os.environ.get('GOOGLE_WORKSHEET_NAME', 'Approval status')
 START_DATE       = os.environ.get('START_DATE', '2023-08-01 00:00:00')
-CREDENTIALS      = os.environ.get('GOOGLE_CREDENTIALS_JSON', 'credentials.json')
+CREDENTIALS      = os.environ.get('GOOGLE_CREDENTIALS_JSON', '')
 
 PAGE_SIZE           = 300
 SLEEP_BETWEEN_CALLS = 1
 MAX_PAGES           = 500
-WRITE_BATCH_SIZE    = 500   # rows per Google Sheets API write call
+WRITE_BATCH_SIZE    = 500
 
 
 # ---------------- GOOGLE SHEETS ----------------
@@ -27,8 +27,25 @@ scope = [
     'https://spreadsheets.google.com/feeds',
     'https://www.googleapis.com/auth/drive'
 ]
-creds  = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(CREDENTIALS), scope)
-client = gspread.authorize(creds)
+
+# Support both raw JSON string and file path
+def load_credentials(value: str) -> dict:
+    """Load credentials from a JSON string or a file path."""
+    value = value.strip()
+    if not value:
+        raise ValueError("GOOGLE_CREDENTIALS_JSON is not set.")
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        # Assume it's a file path
+        if not os.path.exists(value):
+            raise FileNotFoundError(f"Credentials file not found: {value}")
+        with open(value, 'r') as f:
+            return json.load(f)
+
+creds_dict = load_credentials(CREDENTIALS)
+creds      = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+client     = gspread.authorize(creds)
 
 spreadsheet = client.open(SPREADSHEET_NAME)
 
@@ -39,7 +56,8 @@ except WorksheetNotFound:
 
 headers = ['Unique ID', 'Created at', 'Updated at', 'Approval Status']
 sheet.clear()
-sheet.update([headers], 'A1')
+sheet.update(range_name='A1', values=[headers])  # fixed: use keyword args
+
 
 # ---------------- HELPERS ----------------
 def fetch_submissions(offset=0, limit=100):
@@ -72,12 +90,12 @@ def extract_unique_id(answers):
 
 
 def append_with_retry(sheet, batch, retries=3):
-    """Write a batch of rows to Google Sheets with retry on connection errors."""
+    """Write a batch of rows to Google Sheets with retry on errors."""
     for attempt in range(retries):
         try:
             sheet.append_rows(batch, value_input_option='RAW')
             return
-        except (RequestsConnectionError, Exception) as e:
+        except Exception as e:  # fixed: removed redundant RequestsConnectionError
             if attempt < retries - 1:
                 wait = 5 * (attempt + 1)
                 print(f"⚠️  Write failed (attempt {attempt + 1}/{retries}), retrying in {wait}s... [{e}]")
@@ -105,7 +123,7 @@ while page < MAX_PAGES:
         approval_status  = sub.get('workflowStatus', '')
         unique_id        = extract_unique_id(answers)
         last_update_date = sub.get('updated_at', '')
-        created_at = sub.get('created_at','')
+        created_at       = sub.get('created_at', '')
 
         rows_buffer.append([
             unique_id,
@@ -114,13 +132,12 @@ while page < MAX_PAGES:
             approval_status,
         ])
 
-    # Flush buffer to Sheets whenever it reaches WRITE_BATCH_SIZE
     if len(rows_buffer) >= WRITE_BATCH_SIZE:
         append_with_retry(sheet, rows_buffer)
         total_written += len(rows_buffer)
         print(f"📝 Written {total_written} rows so far...")
         rows_buffer = []
-        time.sleep(2)   # brief pause after each write
+        time.sleep(2)
 
     offset += PAGE_SIZE
     page   += 1

@@ -1,7 +1,6 @@
 name: Sync SRF SHEET
 
 on:
-  schedule:
   workflow_dispatch:
 
 jobs:

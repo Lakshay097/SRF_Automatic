@@ -14,7 +14,7 @@ BASE_URL         = os.environ.get('JOTFORM_BASE_URL', 'https://pw.jotform.com/AP
 SPREADSHEET_NAME = os.environ.get('GOOGLE_SHEET_NAME', 'Stock Request Form 2.0')
 WORKSHEET_NAME   = os.environ.get('GOOGLE_WORKSHEET_NAME', 'Approval status')
 START_DATE       = os.environ.get('START_DATE', '2023-08-01 00:00:00')
-CREDENTIALS      = os.environ.get('GOOGLE_CREDENTIALS_JSON', '')
+CREDENTIALS      = os.environ.get('GOOGLE_CREDENTIALS_JSON', 'credentials.json')
 
 PAGE_SIZE           = 300
 SLEEP_BETWEEN_CALLS = 1
@@ -28,24 +28,14 @@ scope = [
     'https://www.googleapis.com/auth/drive'
 ]
 
-# Support both raw JSON string and file path
-def load_credentials(value: str) -> dict:
-    """Load credentials from a JSON string or a file path."""
-    value = value.strip()
-    if not value:
-        raise ValueError("GOOGLE_CREDENTIALS_JSON is not set.")
-    try:
-        return json.loads(value)
-    except json.JSONDecodeError:
-        # Assume it's a file path
-        if not os.path.exists(value):
-            raise FileNotFoundError(f"Credentials file not found: {value}")
-        with open(value, 'r') as f:
-            return json.load(f)
+if not os.path.exists(CREDENTIALS):
+    raise FileNotFoundError(f"Credentials file not found: {CREDENTIALS}")
 
-creds_dict = load_credentials(CREDENTIALS)
-creds      = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-client     = gspread.authorize(creds)
+with open(CREDENTIALS, 'r') as f:
+    creds_dict = json.load(f)
+
+creds  = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+client = gspread.authorize(creds)
 
 spreadsheet = client.open(SPREADSHEET_NAME)
 

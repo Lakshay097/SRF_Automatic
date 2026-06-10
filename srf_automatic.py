@@ -14,7 +14,7 @@ BASE_URL         = os.environ.get('JOTFORM_BASE_URL', 'https://pw.jotform.com/AP
 SPREADSHEET_NAME = os.environ.get('GOOGLE_SHEET_NAME', 'Stock Request Form 2.0')
 WORKSHEET_NAME   = os.environ.get('GOOGLE_WORKSHEET_NAME', 'Approval status')
 START_DATE       = os.environ.get('START_DATE', '2023-08-01 00:00:00')
-CREDENTIALS      = os.environ.get('GOOGLE_CREDENTIALS_PATH', 'credentials.json')
+CREDENTIALS      = os.environ.get('GOOGLE_CREDENTIALS_JSON', 'credentials.json')
 
 PAGE_SIZE           = 300
 SLEEP_BETWEEN_CALLS = 1

@@ -41,7 +41,7 @@ jobs:
           GOOGLE_SHEET_NAME:       ${{ secrets.GOOGLE_SHEET_NAME }}
           GOOGLE_WORKSHEET_NAME:   ${{ secrets.GOOGLE_WORKSHEET_NAME }}
           START_DATE:              ${{ secrets.START_DATE }}
-          GOOGLE_CREDENTIALS_PATH: credentials.json
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON}}
         run: python srf_automatic.py
 
       - name: Clean up credentials

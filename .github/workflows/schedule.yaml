@@ -27,12 +27,8 @@ jobs:
           GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: printf '%s' "$GOOGLE_CREDS" > credentials.json
 
-      - name: Debug credentials file
-        run: |
-          echo "File size:"
-          wc -c credentials.json
-          echo "First 50 chars:"
-          head -c 50 credentials.json
+      - name: Validate credentials.json
+        run: python -c "import json; json.load(open('credentials.json')); print('✅ credentials.json is valid JSON')"
 
       - name: Run srf_automatic.py
         env:
@@ -41,7 +37,7 @@ jobs:
           GOOGLE_SHEET_NAME:       ${{ secrets.GOOGLE_SHEET_NAME }}
           GOOGLE_WORKSHEET_NAME:   ${{ secrets.GOOGLE_WORKSHEET_NAME }}
           START_DATE:              ${{ secrets.START_DATE }}
-          GOOGLE_CREDENTIALS_JSON: credentials.json
+          GOOGLE_CREDENTIALS_FILE: credentials.json
         run: python srf_automatic.py
 
       - name: Clean up credentials

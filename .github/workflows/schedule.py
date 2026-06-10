@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  sync SRF SHEET:
-    name: Sync - SRF SHEEt
+  sync-srf-sheet:
+    name: Sync - SRF SHEET
     runs-on: ubuntu-latest
 
     steps:
@@ -26,13 +26,13 @@ jobs:
       - name: Write Google credentials to file
         run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
 
-      - name: Run irf_sync.py
+      - name: Run srf_automatic.py
         env:
           JOTFORM_API_KEY:         ${{ secrets.JOTFORM_API_KEY }}
           JOTFORM_FORM_ID:         ${{ secrets.JOTFORM_FORM_ID }}
           GOOGLE_SHEET_NAME:       ${{ secrets.GOOGLE_SHEET_NAME }}
           GOOGLE_WORKSHEET_NAME:   ${{ secrets.GOOGLE_WORKSHEET_NAME }}
-          START_DATE:              ${{ secrets.START_DATE}}
+          START_DATE:              ${{ secrets.START_DATE }}
           GOOGLE_CREDENTIALS_PATH: credentials.json
         run: python srf_automatic.py
 

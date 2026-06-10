@@ -23,7 +23,16 @@ jobs:
           pip install -r requirements.txt
 
       - name: Write Google credentials to file
-        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+        env:
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: echo "$GOOGLE_CREDS" > credentials.json
+
+      - name: Debug credentials file
+        run: |
+          echo "File size:"
+          wc -c credentials.json
+          echo "First 50 chars:"
+          head -c 50 credentials.json
 
       - name: Run srf_automatic.py
         env:
